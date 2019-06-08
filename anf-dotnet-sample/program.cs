@@ -121,7 +121,7 @@
 
             // Creating Volumes
             Console.WriteLine("Creating Volumes...");
-            //List<Task<Volume>> volumeTasks = new List<Task<Volume>>();
+            List<Task<Volume>> volumeTasks = new List<Task<Volume>>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
             {
                 if (anfAcct.CapacityPools != null)
@@ -133,10 +133,8 @@
 
                             foreach (ModelVolume volume in pool.Volumes)
                             {
-                                //volumeTasks.Add(Task.Run(
-                                //    async () => await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume)));
-
-                                await Task.Run(async () => await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume));
+                                volumeTasks.Add(Task.Run(
+                                    async () => await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume)));
                             }
                         }
                         else
@@ -146,13 +144,13 @@
                     }
                 }
             }
-            //Task.WaitAll(volumeTasks.ToArray());
+            Task.WaitAll(volumeTasks.ToArray());
 
             // Checking for errors - it returns true if an exception was found
-            //if (CoreHelper.OutputTaskResults<Volume>(volumeTasks, level2))
-            //{
-            //    throw new Exception("One or more errors ocurred");
-            //}
+            if (CoreHelper.OutputTaskResults<Volume>(volumeTasks, level2))
+            {
+                throw new Exception("One or more errors ocurred");
+            }
         }
 
         /// <summary>
@@ -271,7 +269,7 @@
             NetAppAccount anfAccountBody = new NetAppAccount(account.Location, null, account.Name);
 
             // Requesting account to be created
-            return await client.Accounts.BeginCreateOrUpdateAsync(anfAccountBody, config.ResourceGroup, account.Name);
+            return await client.Accounts.CreateOrUpdateAsync(anfAccountBody, config.ResourceGroup, account.Name);
         }
 
         /// <summary>
@@ -287,7 +285,7 @@
             NetAppAccount anfAccount = new NetAppAccount(account.Location.ToLower(), null, account.Name, null, null, null, activeDirectories);
 
             // Requesting account to be created
-            return await client.Accounts.BeginCreateOrUpdateAsync(anfAccount, config.ResourceGroup, account.Name);
+            return await client.Accounts.CreateOrUpdateAsync(anfAccount, config.ResourceGroup, account.Name);
         }
 
         /// <summary>
@@ -307,7 +305,7 @@
                 Size = pool.Size
             };
 
-            return await client.Pools.BeginCreateOrUpdateAsync(capacityPoolBody, resourceGroup, account.Name, pool.Name);
+            return await client.Pools.CreateOrUpdateAsync(capacityPoolBody, resourceGroup, account.Name, pool.Name);
         }
 
         /// <summary>
@@ -348,7 +346,7 @@
                 UsageThreshold = volume.UsageThreshold
             };
 
-            return await client.Volumes.BeginCreateOrUpdateAsync(volumeBody, resourceGroup, account.Name, pool.Name, volume.Name);
+            return await client.Volumes.CreateOrUpdateAsync(volumeBody, resourceGroup, account.Name, pool.Name, volume.Name);
         }
     }
 }
