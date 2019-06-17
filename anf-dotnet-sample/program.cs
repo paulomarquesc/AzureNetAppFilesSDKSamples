@@ -84,12 +84,15 @@
                     accountTasks.Add(Task.Run(
                         async () => await CreateOrRetrieveAccountAsync(config, anfClient, anfAcct)));
                 }
-                Task.WaitAll(accountTasks.ToArray());
 
-                // Checking for errors - it returns true if an exception was found
-                if (CoreHelper.OutputTaskResults<NetAppAccount>(accountTasks, level2))
+                try
                 {
-                    throw new Exception("One or more errors ocurred");
+                    await Task.WhenAll(accountTasks);
+                }
+                finally
+                {
+                    CoreHelper.OutputTaskResults<NetAppAccount>(accountTasks, level2);
+                    accountTasks = null;
                 }
             }
 
@@ -111,12 +114,15 @@
                     Console.WriteLine($"{level1}No capacity pool defined for account {anfAcct.Name}");
                 }
             }
-            Task.WaitAll(poolTasks.ToArray());
 
-            // Checking for errors - it returns true if an exception was found
-            if (CoreHelper.OutputTaskResults<CapacityPool>(poolTasks, level2))
+            try
             {
-                throw new Exception("One or more errors ocurred");
+                await Task.WhenAll(poolTasks);
+            }
+            finally
+            {
+                CoreHelper.OutputTaskResults<CapacityPool>(poolTasks, level2);
+                poolTasks = null;
             }
 
             // Creating Volumes
@@ -144,12 +150,15 @@
                     }
                 }
             }
-            Task.WaitAll(volumeTasks.ToArray());
 
-            // Checking for errors - it returns true if an exception was found
-            if (CoreHelper.OutputTaskResults<Volume>(volumeTasks, level2))
+            try
             {
-                throw new Exception("One or more errors ocurred");
+                await Task.WhenAll(volumeTasks);
+            }
+            finally
+            {
+                CoreHelper.OutputTaskResults<Volume>(volumeTasks, level2);
+                volumeTasks = null;
             }
         }
 
