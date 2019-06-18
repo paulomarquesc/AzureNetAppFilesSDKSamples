@@ -3,10 +3,10 @@ namespace AnfDotNetSample
 {
     using System;
     using System.Collections.Generic;
-    using System.Text;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
-    
+
     class CoreHelper
     {
 
@@ -42,19 +42,16 @@ namespace AnfDotNetSample
 
         public static bool OutputTaskResults<T>(List<Task<T>> tasks, string level)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
             bool hasExceptions = false;
-            Console.ForegroundColor = ConsoleColor.Green;
-            foreach (Task<T> task in tasks)
-            {
-                Console.WriteLine($"{level}Task Id: {task.Id} Task Result: {task.Result} Task Status: {task.Status}");
-                if (task.Exception != null)
-                {
-                    hasExceptions = true;
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"{level}{level}Task Exception: {task.Exception}");
-                    Console.ForegroundColor = ConsoleColor.Green;
-                }
-            }
+
+            tasks.Where(task => task.IsFaulted).ToList()
+                 .ForEach(task =>
+                 {
+                     Console.WriteLine($"{level}Task Id: {task.Id}");
+                     Console.WriteLine($"{level}{level}Task Exception Message: {task.Exception.Message}");
+                 });
+
             Console.ResetColor();
             
             return hasExceptions;

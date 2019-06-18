@@ -86,11 +86,11 @@
                 {
                     await Task.WhenAll(accountTasks);
                 }
-                finally
+                catch
                 {
-                    CoreHelper.OutputTaskResults<NetAppAccount>(accountTasks, level2);
-                    accountTasks = null;
+                    if (CoreHelper.OutputTaskResults<NetAppAccount>(accountTasks, level1)) throw;
                 }
+                accountTasks = null;
             }
 
             // Creating Capacity Pools
@@ -113,11 +113,11 @@
             {
                 await Task.WhenAll(poolTasks);
             }
-            finally
+            catch
             {
-                CoreHelper.OutputTaskResults<CapacityPool>(poolTasks, level2);
-                poolTasks = null;
+                if (CoreHelper.OutputTaskResults<CapacityPool>(poolTasks, level1)) throw;
             }
+            poolTasks = null;
 
             // Creating Volumes
             Console.WriteLine("Creating Volumes...");
@@ -145,11 +145,11 @@
             {
                 await Task.WhenAll(volumeTasks);
             }
-            finally
+            catch
             {
-                CoreHelper.OutputTaskResults<Volume>(volumeTasks, level2);
-                volumeTasks = null;
+                if (CoreHelper.OutputTaskResults<Volume>(volumeTasks, level1)) throw;
             }
+            volumeTasks = null;
         }
 
         /// <summary>
@@ -198,6 +198,7 @@
         {
             // Creating the ANF Account
             CapacityPool anfCapacityPool;
+
             try
             {
                 // Checking if resource already exists
@@ -245,7 +246,7 @@
                 if (ex.HResult == -2146233088)
                 {
                     anfVolume = await CreateOrUpdateVolumeAsync(client, resourceGroup, account, pool, volume);
-                    Console.WriteLine($"{level1}Volume Pool successfully created, resource id: {anfVolume.Id}");
+                    Console.WriteLine($"{level1}Volume successfully created, resource id: {anfVolume.Id}");
                 }
                 else
                 {
