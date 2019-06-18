@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using AnfDotNetSample.Model;
     using Microsoft.Azure.Management.NetApp;
@@ -78,12 +79,8 @@
             }
             else
             {
-                List<Task<NetAppAccount>> accountTasks = new List<Task<NetAppAccount>>();
-                foreach (ModelNetAppAccount anfAcct in config.Accounts)
-                {
-                    accountTasks.Add(Task.Run(
-                        async () => await CreateOrRetrieveAccountAsync(config, anfClient, anfAcct)));
-                }
+                var accountTasks = config.Accounts.Select(
+                   async anfAcct => await CreateOrRetrieveAccountAsync(config, anfClient, anfAcct)).ToList();
 
                 try
                 {
@@ -103,11 +100,8 @@
             {
                 if (anfAcct.CapacityPools != null)
                 {
-                    foreach (ModelCapacityPool pool in anfAcct.CapacityPools)
-                    {
-                        poolTasks.Add(Task.Run(
-                            async () => await CreateOrRetrieveCapacityPoolAsync(anfClient, config.ResourceGroup, anfAcct, pool)));
-                    }
+                    poolTasks = anfAcct.CapacityPools.Select(
+                        async pool => await CreateOrRetrieveCapacityPoolAsync(anfClient, config.ResourceGroup, anfAcct, pool)).ToList();
                 }
                 else
                 {
@@ -136,12 +130,8 @@
                     {
                         if (pool.Volumes != null)
                         {
-
-                            foreach (ModelVolume volume in pool.Volumes)
-                            {
-                                volumeTasks.Add(Task.Run(
-                                    async () => await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume)));
-                            }
+                            volumeTasks = pool.Volumes.Select(
+                                async volume => await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume)).ToList();
                         }
                         else
                         {
