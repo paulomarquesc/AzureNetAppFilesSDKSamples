@@ -6,6 +6,8 @@ namespace AnfDotNetSample
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
+    using Microsoft.Rest;
+    using Microsoft.Rest.Azure;
 
     class CoreHelper
     {
@@ -43,18 +45,22 @@ namespace AnfDotNetSample
         public static bool OutputTaskResults<T>(List<Task<T>> tasks, string level)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            bool hasExceptions = false;
 
             tasks.Where(task => task.IsFaulted).ToList()
                  .ForEach(task =>
                  {
                      Console.WriteLine($"{level}Task Id: {task.Id}");
-                     Console.WriteLine($"{level}{level}Task Exception Message: {task.Exception.Message}");
+                     foreach (CloudException ce in task.Exception.InnerExceptions)
+                     {
+                         HttpRequestMessageWrapper request = ce.Request;
+                         Console.WriteLine($"{level}{level}Task Exception Message: {ce.Message}");
+                         Console.WriteLine($"{level}{level}Task Exception Request Content: {request.Content}");
+                     }
                  });
 
             Console.ResetColor();
             
-            return hasExceptions;
+            return tasks.Where(task => task.IsFaulted).ToList().Count > 0;
         }
     }
 }
