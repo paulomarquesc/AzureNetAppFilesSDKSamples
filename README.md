@@ -1,9 +1,11 @@
-# AzureNetApFilesSDKSamples
-Repository that includes ANF's SDK code usage samples.
+# anf-dotnet-sdk-sample
+Repository that includes Azure NetApp File's SDK .NET code usage sample.
 
 # Prerequisites
 
-1. For this sample console app work, we need initially configure an application in Azure Active Directory
+1. Azure Subscription
+2. Subscription needs to be whitelisted during the gated GA period for Azure NetApp Files. For more information please refer to [this](https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-register#waitlist) document.
+2. For this sample console app work, we need initially configure an application in Azure Active Directory
     1. Create a new application within your Azure Active Directory Tenant:
         ```bash
         az ad app create --display-name anf-sdk-samples --native-app --reply-url http://localhost --required-resource-accesses @manifest.json
@@ -32,4 +34,9 @@ Repository that includes ANF's SDK code usage samples.
         3. The list of required api permissions will be shown and to grant consent, just click the "Grant admin consent for `<Azure AD Name>`" button.
             ![aadconsent](./media/aadconsent.png)
 
- 
+# How to run this test 
+
+
+# References
+
+[Azure Active Directory Device Flow Authentication full sample](https://aka.ms/msal-net-device-code-flow)

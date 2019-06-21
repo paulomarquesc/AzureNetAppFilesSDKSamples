@@ -1,5 +1,9 @@
-﻿
-namespace AnfDotNetSample
+﻿// Copyright (c) Microsoft and contributors.  All rights reserved.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+namespace Microsoft.Azure.Management.ANF.Samples.Common
 {
     using System;
     using System.Collections.Generic;
@@ -9,13 +13,30 @@ namespace AnfDotNetSample
     using Microsoft.Rest;
     using Microsoft.Rest.Azure;
 
-    class CoreHelper
+    /// <summary>
+    /// Contains public methods to get configuration settigns, to initiate authentication, output error results, etc.
+    /// </summary>
+    public static class Utils
     {
 
         /// <summary>
         /// Authentication scope, this is the minimum required to be able to manage resources
         /// </summary>
         private static string[] Scopes { get; set; } = new string[] { @"https://management.core.windows.net/.default" };
+
+        /// <summary>
+        /// Simple function to display this console app basic information
+        /// </summary>
+        public static void DisplayConsoleAppHeader()
+        {
+            Console.WriteLine("AzureNetAppFilesSDKSamples - Sample project that performs the following operations with Azure NetApp Files SDK:");
+            Console.WriteLine("");
+            Console.WriteLine("\t- Creates a new Azure NetApp Account");
+            Console.WriteLine("\t- Creates a new Capacity Pool");
+            Console.WriteLine("\t- Creates a new Volume");
+            Console.WriteLine("\t- TBD");
+            Console.WriteLine("");
+        }
 
         /// <summary>
         /// Function to create the configuration object, used for authentication and ANF resource information
@@ -42,24 +63,31 @@ namespace AnfDotNetSample
             return (await tokenAcquisitionHelper.AcquireATokenFromCacheOrDeviceCodeFlowAsync(Scopes));
         }
 
-        public static bool OutputTaskResults<T>(List<Task<T>> tasks, string level)
+        /// <summary>
+        /// Iterates over a Task<typeparamref name="T"/> for faulted tasks and outputs the error message and returns true when one or more faulted tasks are found
+        /// </summary>
+        /// <typeparam name="T">This can be NetAppAccount, CapacityPool, Volume</typeparam>
+        /// <param name="tasks">List of tasks</param>
+        /// <param name="level">Represents the identation of the error messages in spaces, in this sample we are using four spaces as convention</param>
+        /// <returns></returns>
+        public static bool OutputTaskErrorResults<T>(List<Task<T>> tasks)
         {
             Console.ForegroundColor = ConsoleColor.Red;
 
             tasks.Where(task => task.IsFaulted).ToList()
                  .ForEach(task =>
                  {
-                     Console.WriteLine($"{level}Task Id: {task.Id}");
+                     Console.WriteLine($"\tTask Id: {task.Id}");
                      foreach (CloudException ce in task.Exception.InnerExceptions)
                      {
                          HttpRequestMessageWrapper request = ce.Request;
-                         Console.WriteLine($"{level}{level}Task Exception Message: {ce.Message}");
-                         Console.WriteLine($"{level}{level}Task Exception Request Content: {request.Content}");
+                         Console.WriteLine($"\t\tTask Exception Message: {ce.Message}");
+                         Console.WriteLine($"\t\tTask Exception Request Content: {request.Content}");
                      }
                  });
 
             Console.ResetColor();
-            
+
             return tasks.Where(task => task.IsFaulted).ToList().Count > 0;
         }
     }

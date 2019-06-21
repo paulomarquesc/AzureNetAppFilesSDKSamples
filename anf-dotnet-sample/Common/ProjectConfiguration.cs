@@ -1,14 +1,16 @@
-﻿namespace AnfDotNetSample
+﻿// Copyright (c) Microsoft and contributors.  All rights reserved.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+namespace Microsoft.Azure.Management.ANF.Samples.Common
 {
+    using System.IO;
+    using System.Collections.Generic;
+    using System.Reflection;
+    using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Identity.Client;
-    using System;
-    using System.Globalization;
-    using System.IO;
-    using System.Reflection;
-    using AnfDotNetSample.Model;
-    using System.Collections.Generic;
-    using Microsoft.Azure.Management.NetApp.Models;
 
     /// <summary>
     /// Description of the configuration of an AzureAD public client application (desktop/mobile application). This should
@@ -21,11 +23,6 @@
         /// Authentication options
         /// </summary>
         public PublicClientApplicationOptions PublicClientApplicationOptions { get; set; }
-
-        /// <summary>
-        /// Gets or sets all necessary details to work with the resource
-        /// </summary>
-        public ResourceDetails ResourceDetails { get; set; }
 
         /// <summary>
         /// Gets or sets a list of accounts to be created
@@ -66,7 +63,6 @@
             };
 
             dotnetConfig.Bind("authentication", config.PublicClientApplicationOptions);
-            dotnetConfig.Bind("resourceDetails", config.ResourceDetails);
             dotnetConfig.Bind("accounts", config.Accounts);
 
             config.SubscriptionId = dotnetConfig.GetValue<string>("general:subscriptionId");
