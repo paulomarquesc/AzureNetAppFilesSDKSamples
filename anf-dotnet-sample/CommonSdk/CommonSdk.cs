@@ -5,7 +5,9 @@
 
 namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
 {
+    using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
@@ -108,6 +110,29 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
             };
 
             return await client.Volumes.CreateOrUpdateAsync(volumeBody, resourceGroup, account.Name, pool.Name, volume.Name);
+        }
+
+        /// <summary>
+        /// Deletes a snapshot that is associated to a volume.
+        /// </summary>
+        /// <param name="client">Azure NetApp Files Management Client</param>
+        /// <param name="resourceGroup">Resource Group name where volume will be created</param>
+        /// <param name="account">Account object generated from information contained at the appsettings.json file at Accounts section</param>
+        /// <param name="pool">ModelCapacityPool object that describes the capacity pool to be created, this information comes from appsettings.json</param>
+        /// <param name="volume">ModelVolume object that represents the volume to be created that is defined in appsettings.json</param>
+        /// <param name="snapshotName">Snapshot name</param>
+        /// <returns></returns>
+        public static async Task DeleteSnapshot(AzureNetAppFilesManagementClient client, string resourceGroup, ModelNetAppAccount account, ModelCapacityPool pool, ModelVolume volume, string snapshotName)
+        {
+            try
+            {
+                await client.Snapshots.DeleteAsync(resourceGroup, account.Name, pool.Name, volume.Name, snapshotName);
+                Console.WriteLine($"\tSnapshot {snapshotName} successfuly deleted");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

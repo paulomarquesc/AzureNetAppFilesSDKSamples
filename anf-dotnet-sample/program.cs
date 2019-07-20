@@ -49,10 +49,20 @@ namespace Microsoft.Azure.Management.ANF.Samples
             Console.WriteLine("Instantiating a new Azure NetApp Files management client...");
             TokenCredentials credentials = new TokenCredentials(authenticationResult.AccessToken);
             AzureNetAppFilesManagementClient anfClient = new AzureNetAppFilesManagementClient(credentials) { SubscriptionId = config.SubscriptionId };
-            Console.WriteLine("\tApi Version: {anfClient.ApiVersion}");
+            Console.WriteLine($"\tApi Version: {anfClient.ApiVersion}");
 
             // Creating ANF resources (Account, Pool, Volumes)
             Creation.RunCreationSampleAsync(config, anfClient).GetAwaiter().GetResult();
+
+            // Performing updates on Capacity Pools and Volumes
+            Updates.RunUpdateOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
+
+            // Creating and restoring snapshots
+            //Snapshots.RunSnapshotOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
+
+            // WARNING: destructive operations
+            // Deletion operations (snapshots, volumes, capacity pools and accounts)
+            Cleanup.RunCleanupTasksSampleAsync(config, anfClient).GetAwaiter().GetResult();
         }
     }
 }

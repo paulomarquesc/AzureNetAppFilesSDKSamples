@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Identity.Client;
     using Microsoft.Rest;
     using Microsoft.Rest.Azure;
@@ -89,6 +90,58 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
             Console.ResetColor();
 
             return tasks.Where(task => task.IsFaulted).ToList().Count > 0;
+        }
+
+        public static bool OutputTaskErrorResults(List<Task> tasks)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+
+            tasks.Where(task => task.IsFaulted).ToList()
+                 .ForEach(task =>
+                 {
+                     Console.WriteLine($"\tTask Id: {task.Id}");
+                     foreach (CloudException ce in task.Exception.InnerExceptions)
+                     {
+                         HttpRequestMessageWrapper request = ce.Request;
+                         Console.WriteLine($"\t\tTask Exception Message: {ce.Message}");
+                         Console.WriteLine($"\t\tTask Exception Request Content: {request.Content}");
+                     }
+                 });
+
+            Console.ResetColor();
+
+            return tasks.Where(task => task.IsFaulted).ToList().Count > 0;
+        }
+
+        /// <summary>
+        /// Converts bytes into TiB
+        /// </summary>
+        /// <param name="size">Size in bytes</param>
+        /// <returns>Returns (decimal) the value of bytes in TiB scale</returns>
+        public static decimal GetBytesInTiB(long size)
+        {
+            return (decimal)size / 1024 / 1024 / 1024 / 1024;
+        }
+
+        /// <summary>
+        /// Converts TiB into bytes
+        /// </summary>
+        /// <param name="size">Size in TiB</param>
+        /// <returns>Returns (long) the value of TiB in bytes scale</returns>
+        public static long GetTiBInBytes(decimal size)
+        {
+            return (long)size * 1024 * 1024 * 1024 * 1024;
+        }
+
+        /// <summary>
+        /// Displays errors messages in red
+        /// </summary>
+        /// <param name="message">Message to be written in console</param>
+        public static void WriteErrorMessage(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
         }
     }
 }

@@ -1,0 +1,153 @@
+﻿// Copyright (c) Microsoft and contributors.  All rights reserved.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+namespace Microsoft.Azure.Management.ANF.Samples
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Management.ANF.Samples.Common;
+    using Microsoft.Azure.Management.ANF.Samples.Model;
+    using Microsoft.Azure.Management.NetApp;
+    using Microsoft.Azure.Management.NetApp.Models;
+    using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
+    using static Microsoft.Azure.Management.ANF.Samples.Common.Sdk.CommonSdk;
+    
+    public static class Updates
+    {
+        /// <summary>
+        /// Executes some updates on first capacity pool and first volume listed in the configuration file (appsettings.json)
+        /// </summary>
+        /// <returns></returns>
+        public static async Task RunUpdateOperationsSampleAsync(ProjectConfiguration config, AzureNetAppFilesManagementClient anfClient)
+        {
+            //
+            // Capacity Pool Updates
+            //
+
+            Console.WriteLine("Performing size update on a Capacity Pool");
+
+            // Get current Capacity Pool information
+            CapacityPool capacityPool = null;
+            try
+            {
+                capacityPool = await anfClient.Pools.GetAsync(
+                    config.ResourceGroup,
+                    config.Accounts[0].Name,
+                    config.Accounts[0].CapacityPools[0].Name);
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteErrorMessage($"An error occured while getting current Capacity Pool information ({config.Accounts[0].CapacityPools[0].Name}).\nError message: {ex.Message}");
+                throw;
+            }
+
+            int newCapacityPoolSizeTiB = 6;
+            Console.WriteLine($"\tChanging Capacity Pools size from {Utils.GetBytesInTiB(capacityPool.Size)}TiB to {newCapacityPoolSizeTiB}TiB");
+
+            // New size in bytes
+            long newCapacityPoolSizeBytes = Utils.GetTiBInBytes(newCapacityPoolSizeTiB);
+
+            // Create capacity pool patch object passing required arguments and the updated size
+            CapacityPoolPatch capacityPoolPatch = new CapacityPoolPatch(
+                capacityPool.Location,
+                capacityPool.Id,
+                capacityPool.Id,
+                size: newCapacityPoolSizeBytes);
+
+            // Update capacity pool resource
+            try
+            {
+                CapacityPool updatedCapacityPool = await anfClient.Pools.UpdateAsync(
+                    capacityPoolPatch, 
+                    config.ResourceGroup, 
+                    config.Accounts[0].Name,
+                    config.Accounts[0].CapacityPools[0].Name);
+
+                Console.WriteLine($"\tCapacity Pool successfully updated, new size: {Utils.GetBytesInTiB(updatedCapacityPool.Size)}TiB, resource id: {updatedCapacityPool.Id}");
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteErrorMessage($"An error occured while updating Capacity Pool {capacityPool.Id}.\nError message: {ex.Message}");
+                throw;
+            }
+
+            //
+            // Volume Updates
+            //
+
+            Console.WriteLine("Performing size and export policy update on a volume");
+
+            // Get current Volume information
+            Volume volume = null;
+            try
+            {
+                volume = await anfClient.Volumes.GetAsync(
+                    config.ResourceGroup,
+                    config.Accounts[0].Name,
+                    config.Accounts[0].CapacityPools[0].Name,
+                    config.Accounts[0].CapacityPools[0].Volumes[0].Name);
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteErrorMessage($"An error occured while getting current Volume information ({config.Accounts[0].CapacityPools[0].Volumes[0].Name}).\nError message: {ex.Message}");
+                throw;
+            }
+
+            int newVolumeSizeTiB = 1;
+            Console.WriteLine($"\tChanging Volume size from {Utils.GetBytesInTiB(volume.UsageThreshold)}TiB to {newVolumeSizeTiB}TiB.\n\tAlso adding new export policy rule, current count is {volume.ExportPolicy.Rules.Count}.");
+
+            // New size in bytes
+            long newVolumeSizeBytes = Utils.GetTiBInBytes(newVolumeSizeTiB);
+
+            // New Export Policy rule
+            List<ExportPolicyRule> ruleList = volume.ExportPolicy.Rules.OrderByDescending(r => r.RuleIndex).ToList();
+
+            // Currently, ANF's volume export policy supports up to 5 rules
+            if (ruleList.Count <= 4)
+            {
+                ruleList.Add(new ExportPolicyRule()
+                {
+                    AllowedClients = "10.0.0.4/32",
+                    Cifs = false,
+                    Nfsv3 = true,
+                    Nfsv4 = false,
+                    RuleIndex = ruleList.ToList()[0].RuleIndex + 1,
+                    UnixReadOnly = false,
+                    UnixReadWrite = true
+                });
+            }
+
+            VolumePatchPropertiesExportPolicy exportPoliciesPatch = new VolumePatchPropertiesExportPolicy() { Rules = ruleList };
+
+            // Create volume patch object passing required arguments and the updated size
+            VolumePatch volumePatch = new VolumePatch(
+                volume.Location, 
+                volume.Id, 
+                volume.Name, 
+                usageThreshold: newVolumeSizeBytes,
+                exportPolicy: exportPoliciesPatch);
+
+            // Update size at volume resource
+            try
+            {
+                Volume updatedVolume = await anfClient.Volumes.UpdateAsync(
+                    volumePatch,
+                    config.ResourceGroup,
+                    config.Accounts[0].Name,
+                    config.Accounts[0].CapacityPools[0].Name,
+                    config.Accounts[0].CapacityPools[0].Volumes[0].Name);
+
+                Console.WriteLine($"\tVolume successfully updated, new size: {Utils.GetBytesInTiB(updatedVolume.UsageThreshold)}TiB, export policy count: {updatedVolume.ExportPolicy.Rules.Count}, resource id: {updatedVolume.Id}");
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteErrorMessage($"An error occured while updating Volume {volume.Id}.\nError message: {ex.Message}");
+                throw;
+            }
+        }
+    }
+}

@@ -24,8 +24,11 @@ namespace Microsoft.Azure.Management.ANF.Samples
         /// <returns></returns>
         public static async Task RunCreationSampleAsync(ProjectConfiguration config, AzureNetAppFilesManagementClient anfClient)
         {
+            //
             // Creating ANF Accounts
-            Console.WriteLine($"Creating Azure NetApp Files accounts ...");
+            //
+
+            Console.WriteLine("Creating Azure NetApp Files accounts ...");
             if (config.Accounts.Count == 0)
             {
                 Console.WriteLine("No ANF accounts defined within appsettings.json file, exiting.");
@@ -47,7 +50,10 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 accountTasks = null;
             }
 
+            //
             // Creating Capacity Pools
+            //
+
             Console.WriteLine("Creating Capacity Pools...");
             List<Task<CapacityPool>> poolTasks = new List<Task<CapacityPool>>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
@@ -59,7 +65,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 }
                 else
                 {
-                    Console.WriteLine("\tNo capacity pool defined for account {anfAcct.Name}");
+                    Console.WriteLine($"\tNo capacity pool defined for account {anfAcct.Name}");
                 }
             }
 
@@ -73,7 +79,10 @@ namespace Microsoft.Azure.Management.ANF.Samples
             }
             poolTasks = null;
 
+            //
             // Creating Volumes
+            //
+
             Console.WriteLine("Creating Volumes...");
             List<Task<Volume>> volumeTasks = new List<Task<Volume>>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
@@ -89,7 +98,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                         }
                         else
                         {
-                            Console.WriteLine("\tNo volumes defined for Account: {anfAcct.Name}, Capacity Pool: {pool.Name}");
+                            Console.WriteLine($"\tNo volumes defined for Account: {anfAcct.Name}, Capacity Pool: {pool.Name}");
                         }
                     }
                 }
@@ -121,7 +130,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             {
                 // Checking if resource already exists
                 anfAccount = await client.Accounts.GetAsync(config.ResourceGroup, account.Name);
-                Console.WriteLine("\tAccount already exists, resource id: {anfAccount.Id}");
+                Console.WriteLine($"\tAccount already exists, resource id: {anfAccount.Id}");
             }
             catch (Exception ex)
             {
@@ -129,7 +138,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 if (ex.HResult == -2146233088)
                 {
                     anfAccount = await CreateOrUpdateAnfAccountAsync(config, client, account);
-                    Console.WriteLine("\tAccount successfully created, resource id: {anfAccount.Id}");
+                    Console.WriteLine($"\tAccount successfully created, resource id: {anfAccount.Id}");
                 }
                 else
                 {
@@ -158,7 +167,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 // Checking if resource already exists
                 anfCapacityPool = await client.Pools.GetAsync(resourceGroup, account.Name, pool.Name);
 
-                Console.WriteLine("\tCapacity Pool already exists, resource id: {anfCapacityPool.Id}");
+                Console.WriteLine($"\tCapacity Pool already exists, resource id: {anfCapacityPool.Id}");
             }
             catch (Exception ex)
             {
@@ -166,7 +175,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 if (ex.HResult == -2146233088)
                 {
                     anfCapacityPool = await CreateOrUpdateCapacityPoolAsync(client, resourceGroup, account, pool);
-                    Console.WriteLine("\tCapacity Pool successfully created, resource id: {anfCapacityPool.Id}");
+                    Console.WriteLine($"\tCapacity Pool successfully created, resource id: {anfCapacityPool.Id}");
                 }
                 else
                 {
@@ -192,7 +201,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             {
                 // Checking if resource already exists
                 anfVolume = await client.Volumes.GetAsync(resourceGroup, account.Name, pool.Name, volume.Name);
-                Console.WriteLine("\tVolume already exists, resource id: {anfVolume.Id}");
+                Console.WriteLine($"\tVolume already exists, resource id: {anfVolume.Id}");
             }
             catch (Exception ex)
             {
@@ -200,7 +209,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 if (ex.HResult == -2146233088)
                 {
                     anfVolume = await CreateOrUpdateVolumeAsync(client, resourceGroup, account, pool, volume);
-                    Console.WriteLine("\tVolume successfully created, resource id: {anfVolume.Id}");
+                    Console.WriteLine($"\tVolume successfully created, resource id: {anfVolume.Id}");
                 }
                 else
                 {
