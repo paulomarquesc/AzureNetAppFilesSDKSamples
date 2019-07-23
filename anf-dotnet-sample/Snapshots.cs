@@ -28,9 +28,9 @@ namespace Microsoft.Azure.Management.ANF.Samples
             // Creating snapshot from first volume of the first capacity pool
             //
 
-            Console.WriteLine("Performing snapshot operations");
+            Utils.WriteConsoleMessage("Performing snapshot operations");
 
-            Console.WriteLine("\tCreating snapshot...");
+            Utils.WriteConsoleMessage("\tCreating snapshot...");
 
             string snapshotName = $"Snapshot-{Guid.NewGuid()}";
 
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                     config.Accounts[0].CapacityPools[0].Volumes[0].Name,
                     snapshotName);
 
-                Console.WriteLine($"Snapshot successfully created. Snapshot resource id: {snapshot.Id}");
+                Utils.WriteConsoleMessage($"Snapshot successfully created. Snapshot resource id: {snapshot.Id}");
             }
             catch (Exception ex)
             {
@@ -58,58 +58,60 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 throw;
             }
 
-            ////
-            //// Creating a volume from snapshot
-            ////
+            //
+            // Creating a volume from snapshot
+            //
 
-            //Console.WriteLine("\tCreating new volume from snapshot...");
+            Utils.WriteConsoleMessage("\tCreating new volume from snapshot...");
 
-            //string newVolumeName = $"Vol-{ResourceUriUtils.GetAnfSnapshot(snapshot.Id)}";
+            string newVolumeName = $"Vol-{ResourceUriUtils.GetAnfSnapshot(snapshot.Id)}";
 
-            //Volume snapshotVolume = null;
-            //try
-            //{
-            //    snapshotVolume = await anfClient.Volumes.GetAsync(
-            //        ResourceUriUtils.GetResourceGroup(snapshot.Id),
-            //        ResourceUriUtils.GetAnfAccount(snapshot.Id),
-            //        ResourceUriUtils.GetAnfCapacityPool(snapshot.Id),
-            //        ResourceUriUtils.GetAnfVolume(snapshot.Id));
-            //}
-            //catch (Exception ex)
-            //{
-            //    Utils.WriteErrorMessage($"An error occured trying to obtain information about volume ({ResourceUriUtils.GetAnfVolume(snapshot.Id)}) from snapshot {snapshot.Id}.\nError message: {ex.Message}");
-            //    throw;
-            //}
+            Volume snapshotVolume = null;
+            try
+            {
+                snapshotVolume = await anfClient.Volumes.GetAsync(
+                    ResourceUriUtils.GetResourceGroup(snapshot.Id),
+                    ResourceUriUtils.GetAnfAccount(snapshot.Id),
+                    ResourceUriUtils.GetAnfCapacityPool(snapshot.Id),
+                    ResourceUriUtils.GetAnfVolume(snapshot.Id));
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteErrorMessage($"An error occured trying to obtain information about volume ({ResourceUriUtils.GetAnfVolume(snapshot.Id)}) from snapshot {snapshot.Id}.\nError message: {ex.Message}");
+                throw;
+            }
 
-            //Volume newVolumeFromSnapshot = null;
-            //try
-            //{
-            //    Volume volumeFromSnapshotBody = new Volume()
-            //    {
-            //        SnapshotId = snapshot.Id,
-            //        ExportPolicy = snapshotVolume.ExportPolicy,
-            //        Location = snapshotVolume.Location,
-            //        ProtocolTypes = snapshotVolume.ProtocolTypes,
-            //        ServiceLevel = snapshotVolume.ServiceLevel,
-            //        UsageThreshold = snapshotVolume.UsageThreshold,
-            //        SubnetId = snapshotVolume.SubnetId,
-            //        CreationToken = newVolumeName
-            //    };
+            Volume newVolumeFromSnapshot = null;
+            try
+            {
+                // Notice that Snaphot it is not the resource Id of the snapshot, this value is the unique identifier (guid) of 
+                // the snapshot, represented by the SnapshotId instead.
+                Volume volumeFromSnapshotBody = new Volume()
+                {
+                    SnapshotId = snapshot.SnapshotId,
+                    ExportPolicy = snapshotVolume.ExportPolicy,
+                    Location = snapshotVolume.Location,
+                    ProtocolTypes = snapshotVolume.ProtocolTypes,
+                    ServiceLevel = snapshotVolume.ServiceLevel,
+                    UsageThreshold = snapshotVolume.UsageThreshold,
+                    SubnetId = snapshotVolume.SubnetId,
+                    CreationToken = newVolumeName
+                };
 
-            //    newVolumeFromSnapshot = await anfClient.Volumes.CreateOrUpdateAsync(
-            //        volumeFromSnapshotBody,
-            //        config.ResourceGroup,
-            //        config.Accounts[0].Name,
-            //        config.Accounts[0].CapacityPools[0].Name,
-            //        newVolumeName);
+                newVolumeFromSnapshot = await anfClient.Volumes.CreateOrUpdateAsync(
+                    volumeFromSnapshotBody,
+                    config.ResourceGroup,
+                    config.Accounts[0].Name,
+                    config.Accounts[0].CapacityPools[0].Name,
+                    newVolumeName);
 
-            //    Console.WriteLine($"Volume successfully created from snapshot. Volume resource id: {newVolumeFromSnapshot.Id}");
-            //}
-            //catch (Exception ex)
-            //{
-            //    Utils.WriteErrorMessage($"An error occured while creating a volume ({newVolumeName}) from snapshot {snapshot.Id}.\nError message: {ex.Message}");
-            //    throw;
-            //}
+                Utils.WriteConsoleMessage($"Volume successfully created from snapshot. Volume resource id: {newVolumeFromSnapshot.Id}");
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteErrorMessage($"An error occured while creating a volume ({newVolumeName}) from snapshot {snapshot.Id}.\nError message: {ex.Message}");
+                throw;
+            }
         }
     }
 }

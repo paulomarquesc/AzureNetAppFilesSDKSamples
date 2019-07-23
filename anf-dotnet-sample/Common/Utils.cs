@@ -78,12 +78,12 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
             tasks.Where(task => task.IsFaulted).ToList()
                  .ForEach(task =>
                  {
-                     Console.WriteLine($"\tTask Id: {task.Id}");
+                     Utils.WriteConsoleMessage($"\tTask Id: {task.Id}");
                      foreach (CloudException ce in task.Exception.InnerExceptions)
                      {
                          HttpRequestMessageWrapper request = ce.Request;
-                         Console.WriteLine($"\t\tTask Exception Message: {ce.Message}");
-                         Console.WriteLine($"\t\tTask Exception Request Content: {request.Content}");
+                         Utils.WriteConsoleMessage($"\t\tTask Exception Message: {ce.Message}");
+                         Utils.WriteConsoleMessage($"\t\tTask Exception Request Content: {request.Content}");
                      }
                  });
 
@@ -99,12 +99,12 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
             tasks.Where(task => task.IsFaulted).ToList()
                  .ForEach(task =>
                  {
-                     Console.WriteLine($"\tTask Id: {task.Id}");
+                     Utils.WriteConsoleMessage($"\tTask Id: {task.Id}");
                      foreach (CloudException ce in task.Exception.InnerExceptions)
                      {
                          HttpRequestMessageWrapper request = ce.Request;
-                         Console.WriteLine($"\t\tTask Exception Message: {ce.Message}");
-                         Console.WriteLine($"\t\tTask Exception Request Content: {request.Content}");
+                         Utils.WriteConsoleMessage($"\t\tTask Exception Message: {ce.Message}");
+                         Utils.WriteConsoleMessage($"\t\tTask Exception Request Content: {request.Content}");
                      }
                  });
 
@@ -140,8 +140,17 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
         public static void WriteErrorMessage(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
+            Utils.WriteConsoleMessage(message);
             Console.ResetColor();
+        }
+
+        /// <summary>
+        /// Displays errors messages in red
+        /// </summary>
+        /// <param name="message">Message to be written in console</param>
+        public static void WriteConsoleMessage(string message)
+        {
+            Console.WriteLine($"{DateTime.Now}: {message}");
         }
     }
 }

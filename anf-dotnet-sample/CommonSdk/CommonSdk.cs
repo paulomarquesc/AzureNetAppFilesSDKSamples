@@ -127,7 +127,7 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
             try
             {
                 await client.Snapshots.DeleteAsync(resourceGroup, account.Name, pool.Name, volume.Name, snapshotName);
-                Console.WriteLine($"\tSnapshot {snapshotName} successfuly deleted");
+                Utils.WriteConsoleMessage($"\tSnapshot {snapshotName} successfuly deleted");
             }
             catch (Exception)
             {

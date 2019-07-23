@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             // Cleaning up snapshots
             //
 
-            Console.WriteLine("Cleaning up snapshots...");
+            Utils.WriteConsoleMessage("Cleaning up snapshots...");
             List<Task> snapshotTasks = new List<Task>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
             {
@@ -52,10 +52,17 @@ namespace Microsoft.Azure.Management.ANF.Samples
                                        pool.Name,
                                        volume.Name);
                                 }
-                                catch (Exception)
+                                catch (Exception ex)
                                 {
-                                    Utils.WriteErrorMessage($"An error ocurred trying to list snapshots for volume {pool.Name}");
-                                    throw;
+                                    if (ex.HResult == -2146233088)
+                                    {
+                                        Utils.WriteConsoleMessage($"No snapshots related to volume {volume.Name} found.");
+                                    }
+                                    else
+                                    {
+                                        Utils.WriteErrorMessage($"An error ocurred trying to list snapshots for volume {pool.Name}");
+                                        throw;
+                                    }
                                 }
 
                                 if (anfSnapshotList != null && anfSnapshotList.Count() > 0)
@@ -75,13 +82,13 @@ namespace Microsoft.Azure.Management.ANF.Samples
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"No snapshots related to volume {volume.Name} found.");
+                                    Utils.WriteConsoleMessage($"No snapshots related to volume {volume.Name} found.");
                                 }
                             }
                         }
                         else
                         {
-                            Console.WriteLine($"\tNo volumes defined for Account: {anfAcct.Name}, Capacity Pool: {pool.Name}");
+                            Utils.WriteConsoleMessage($"\tNo volumes defined for Account: {anfAcct.Name}, Capacity Pool: {pool.Name}");
                         }
                     }
                 }

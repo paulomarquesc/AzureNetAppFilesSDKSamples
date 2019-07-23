@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             // Capacity Pool Updates
             //
 
-            Console.WriteLine("Performing size update on a Capacity Pool");
+            Utils.WriteConsoleMessage("Performing size update on a Capacity Pool");
 
             // Get current Capacity Pool information
             CapacityPool capacityPool = null;
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             }
 
             int newCapacityPoolSizeTiB = 6;
-            Console.WriteLine($"\tChanging Capacity Pools size from {Utils.GetBytesInTiB(capacityPool.Size)}TiB to {newCapacityPoolSizeTiB}TiB");
+            Utils.WriteConsoleMessage($"\tChanging Capacity Pools size from {Utils.GetBytesInTiB(capacityPool.Size)}TiB to {newCapacityPoolSizeTiB}TiB");
 
             // New size in bytes
             long newCapacityPoolSizeBytes = Utils.GetTiBInBytes(newCapacityPoolSizeTiB);
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                     config.Accounts[0].Name,
                     config.Accounts[0].CapacityPools[0].Name);
 
-                Console.WriteLine($"\tCapacity Pool successfully updated, new size: {Utils.GetBytesInTiB(updatedCapacityPool.Size)}TiB, resource id: {updatedCapacityPool.Id}");
+                Utils.WriteConsoleMessage($"\tCapacity Pool successfully updated, new size: {Utils.GetBytesInTiB(updatedCapacityPool.Size)}TiB, resource id: {updatedCapacityPool.Id}");
             }
             catch (Exception ex)
             {
@@ -79,7 +79,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             // Volume Updates
             //
 
-            Console.WriteLine("Performing size and export policy update on a volume");
+            Utils.WriteConsoleMessage("Performing size and export policy update on a volume");
 
             // Get current Volume information
             Volume volume = null;
@@ -98,7 +98,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             }
 
             int newVolumeSizeTiB = 1;
-            Console.WriteLine($"\tChanging Volume size from {Utils.GetBytesInTiB(volume.UsageThreshold)}TiB to {newVolumeSizeTiB}TiB.\n\tAlso adding new export policy rule, current count is {volume.ExportPolicy.Rules.Count}.");
+            Utils.WriteConsoleMessage($"\tChanging Volume size from {Utils.GetBytesInTiB(volume.UsageThreshold)}TiB to {newVolumeSizeTiB}TiB. Also adding new export policy rule, current count is {volume.ExportPolicy.Rules.Count}.");
 
             // New size in bytes
             long newVolumeSizeBytes = Utils.GetTiBInBytes(newVolumeSizeTiB);
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                     config.Accounts[0].CapacityPools[0].Name,
                     config.Accounts[0].CapacityPools[0].Volumes[0].Name);
 
-                Console.WriteLine($"\tVolume successfully updated, new size: {Utils.GetBytesInTiB(updatedVolume.UsageThreshold)}TiB, export policy count: {updatedVolume.ExportPolicy.Rules.Count}, resource id: {updatedVolume.Id}");
+                Utils.WriteConsoleMessage($"\tVolume successfully updated, new size: {Utils.GetBytesInTiB(updatedVolume.UsageThreshold)}TiB, export policy count: {updatedVolume.ExportPolicy.Rules.Count}, resource id: {updatedVolume.Id}");
             }
             catch (Exception ex)
             {

@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Common;
     using Microsoft.Azure.Management.NetApp;
+    using Microsoft.Azure.Management.ResourceManager.Fluent;
     using Microsoft.Identity.Client;
     using Microsoft.Rest;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
@@ -25,31 +26,36 @@ namespace Microsoft.Azure.Management.ANF.Samples
 
             try
             {
-                RunAsync().GetAwaiter().GetResult();
+                //RunAsync().GetAwaiter().GetResult();
+                Run();
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(ex.Message);
-                Console.ResetColor();
+                WriteErrorMessage(ex.Message);
             }
         }
 
-        static private async Task RunAsync()
+        static private void Run()
         {
             // Getting project configuration
             ProjectConfiguration config = GetConfiguration("appsettings.json");
 
-            // Authenticating
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            AuthenticationResult authenticationResult = await AuthenticateAsync(config.PublicClientApplicationOptions);
-            Console.ResetColor();
+            // Authenticating using service principals
+            var credentials = SdkContext.AzureCredentialsFactory
+                .FromFile(Environment.GetEnvironmentVariable("AZURE_AUTH_LOCATION"));
+
+            // Authenticating using Device Login flow - uncomment following 4 lines for this type of authentication and
+            // comment the lines related to service principal authentication
+            // Console.ForegroundColor = ConsoleColor.Yellow;
+            // AuthenticationResult authenticationResult = await AuthenticateAsync(config.PublicClientApplicationOptions);
+            // TokenCredentials credentials = new TokenCredentials(authenticationResult.AccessToken);
+            // Console.ResetColor();
 
             // Instantiating a new ANF management client
-            Console.WriteLine("Instantiating a new Azure NetApp Files management client...");
-            TokenCredentials credentials = new TokenCredentials(authenticationResult.AccessToken);
+            Utils.WriteConsoleMessage("Instantiating a new Azure NetApp Files management client...");
+
             AzureNetAppFilesManagementClient anfClient = new AzureNetAppFilesManagementClient(credentials) { SubscriptionId = config.SubscriptionId };
-            Console.WriteLine($"\tApi Version: {anfClient.ApiVersion}");
+            Utils.WriteConsoleMessage($"\tApi Version: {anfClient.ApiVersion}");
 
             // Creating ANF resources (Account, Pool, Volumes)
             Creation.RunCreationSampleAsync(config, anfClient).GetAwaiter().GetResult();
@@ -58,10 +64,13 @@ namespace Microsoft.Azure.Management.ANF.Samples
             Updates.RunUpdateOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
 
             // Creating and restoring snapshots
-            //Snapshots.RunSnapshotOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
+            Snapshots.RunSnapshotOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
 
             // WARNING: destructive operations
             // Deletion operations (snapshots, volumes, capacity pools and accounts)
+
+            // Waiting a few seconds before starting cleaning up process
+            System.Threading.Thread.Sleep(90);
             Cleanup.RunCleanupTasksSampleAsync(config, anfClient).GetAwaiter().GetResult();
         }
     }
