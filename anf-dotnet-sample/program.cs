@@ -69,8 +69,9 @@ namespace Microsoft.Azure.Management.ANF.Samples
             // WARNING: destructive operations
             // Deletion operations (snapshots, volumes, capacity pools and accounts)
 
-            // Waiting a few seconds before starting cleaning up process
-            //System.Threading.Thread.Sleep(90);
+            Utils.WriteConsoleMessage($"Waiting for 5 minutes to let the snapshot used to create a new volume to complete the split operation therefore not being locked...");
+            System.Threading.Thread.Sleep(TimeSpan.FromMinutes(5));
+
             Cleanup.RunCleanupTasksSampleAsync(config, anfClient).GetAwaiter().GetResult();
         }
     }
