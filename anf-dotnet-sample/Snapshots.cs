@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             Volume newVolumeFromSnapshot = null;
             try
             {
-                // Notice that Snaphot it is not the resource Id of the snapshot, this value is the unique identifier (guid) of 
+                // Notice that Snapshot it is not the resource Id of the snapshot, this value is the unique identifier (guid) of 
                 // the snapshot, represented by the SnapshotId instead.
                 Volume volumeFromSnapshotBody = new Volume()
                 {

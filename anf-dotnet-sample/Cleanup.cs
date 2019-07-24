@@ -67,18 +67,19 @@ namespace Microsoft.Azure.Management.ANF.Samples
 
                                 if (anfSnapshotList != null && anfSnapshotList.Count() > 0)
                                 {
-                                    foreach (Snapshot snapshot in anfSnapshotList)
-                                    {
-                                        // As of 07/19/2019, snapshot Name property returns a relative path up to the name
-                                        // and to use this property by the DeleteAsync parameter, the argument needs to be sanitized and just the 
-                                        // actual name needs to be used.
-                                        // Snapshot Name poperty example: "pmarques-anf01/pool01/pmarques-anf01-pool01-vol01/test-a"
-                                        // "test-a" is the actual name that needs to be used instead. Below you will see a sample function that parses the name from 
-                                        // the snapshot resource id
-                                        snapshotTasks.Add(
-                                            Task.Run(
-                                                async () => await DeleteSnapshot(anfClient, config.ResourceGroup, anfAcct, pool, volume, ResourceUriUtils.GetAnfSnapshot(snapshot.Id))));
-                                    }
+                                    // Snapshot Name property returns a relative path up to the name and to use this property
+                                    // by the DeleteAsync parameter, the argument needs to be sanitized and just the 
+                                    // actual name needs to be used.
+                                    // Snapshot Name poperty example: "pmarques-anf01/pool01/pmarques-anf01-pool01-vol01/test-a"
+                                    // "test-a" is the actual name that needs to be used instead. Below you will see a sample function that parses the name from 
+                                    // the snapshot resource id
+
+                                    snapshotTasks = anfSnapshotList.Select(
+                                        async snapshot =>
+                                        {
+                                            await anfClient.Snapshots.DeleteAsync(config.ResourceGroup, anfAcct.Name, pool.Name, volume.Name, ResourceUriUtils.GetAnfSnapshot(snapshot.Id));
+                                            Utils.WriteConsoleMessage($"\tDeleted snapshot {snapshot.Id}");
+                                        }).ToList();
                                 }
                                 else
                                 {

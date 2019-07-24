@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             // Deletion operations (snapshots, volumes, capacity pools and accounts)
 
             // Waiting a few seconds before starting cleaning up process
-            System.Threading.Thread.Sleep(90);
+            //System.Threading.Thread.Sleep(90);
             Cleanup.RunCleanupTasksSampleAsync(config, anfClient).GetAwaiter().GetResult();
         }
     }
