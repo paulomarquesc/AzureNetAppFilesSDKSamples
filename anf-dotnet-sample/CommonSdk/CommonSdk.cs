@@ -6,8 +6,11 @@
 namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Net;
+    using System.Reflection.Metadata;
+    using System.Runtime.InteropServices.ComTypes;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
@@ -110,6 +113,102 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
             };
 
             return await client.Volumes.CreateOrUpdateAsync(volumeBody, resourceGroup, account.Name, pool.Name, volume.Name);
+        }
+
+        public static async Task<T> GetResourceAsync<T>(AzureNetAppFilesManagementClient client, params string[] parameterList )
+        {
+            try
+            {
+                if (typeof(T) == typeof(Snapshot))
+                {
+                    return (T)(object)await client.Snapshots.GetAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1],
+                        poolName: parameterList[2],
+                        volumeName: parameterList[3],
+                        snapshotName: parameterList[4]);
+                }
+                if (typeof(T) == typeof(Volume))
+                {
+                    return (T)(object)await client.Volumes.GetAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1],
+                        poolName: parameterList[2],
+                        volumeName: parameterList[3]);
+                }
+                else if (typeof(T) == typeof(CapacityPool))
+                {
+                    return (T)(object)await client.Pools.GetAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1],
+                        poolName: parameterList[2]);
+                }
+                else if (typeof(T) == typeof(NetAppAccount))
+                {
+                    return (T)(object)await client.Accounts.GetAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1]);
+                }
+
+                // If object is not supported by this method, return null
+                return default(T);
+            }
+            catch (Exception ex)
+            {
+                // If resource does not exist return null
+                if (ex.HResult == -2146233088)
+                {
+                    return default(T);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        public static async Task<IEnumerable<T>> ListResourceAsync<T>(AzureNetAppFilesManagementClient client, params string[] parameterList)
+        {
+            try
+            {
+                if (typeof(T) == typeof(Snapshot))
+                {
+                    return (IEnumerable<T>)(object)await client.Snapshots.ListAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1],
+                        poolName: parameterList[2],
+                        volumeName: parameterList[3]);
+                }
+                if (typeof(T) == typeof(Volume))
+                {
+                    return (IEnumerable<T>)(object)await client.Volumes.ListAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1],
+                        poolName: parameterList[2]);
+                }
+                else if (typeof(T) == typeof(CapacityPool))
+                {
+                    return (IEnumerable<T>)(object)await client.Pools.ListAsync(
+                        resourceGroupName: parameterList[0],
+                        accountName: parameterList[1]);
+                }
+                else if (typeof(T) == typeof(NetAppAccount))
+                {
+                    return (IEnumerable<T>)(object)await client.Accounts.ListAsync(
+                        resourceGroupName: parameterList[0]);
+                }
+            }
+            catch (Exception ex)
+            {
+                // If resource does not exist return null
+                if (ex.HResult != -2146233088)
+                {
+                    throw;
+                }
+            }
+
+            // If object is not supported by this method or a not found exception was raised, return null
+            return null;
         }
     }
 }

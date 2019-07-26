@@ -7,12 +7,15 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Identity.Client;
     using Microsoft.Rest;
     using Microsoft.Rest.Azure;
+    using Microsoft.Rest.Azure.Authentication;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Contains public methods to get configuration settigns, to initiate authentication, output error results, etc.
@@ -65,14 +68,15 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
         }
 
         /// <summary>
-        /// Iterates over a Task<typeparamref name="T"/> for faulted tasks and outputs the error message and returns true when one or more faulted tasks are found
+        /// Iterates over a Task<typeparamref name="T"/> for faulted tasks and outputs the error messages, returns true when one or more faulted tasks are found
         /// </summary>
         /// <typeparam name="T">This can be NetAppAccount, CapacityPool, Volume</typeparam>
         /// <param name="tasks">List of tasks</param>
         /// <param name="level">Represents the identation of the error messages in spaces, in this sample we are using four spaces as convention</param>
-        /// <returns></returns>
-        public static bool OutputTaskErrorResults<T>(List<Task<T>> tasks)
+        /// <returns>True if a faulted task is found</returns>
+        public static void OutputTaskErrorResults<T>(List<Task<T>> tasks)
         {
+            // Outputs errors if any
             Console.ForegroundColor = ConsoleColor.Red;
 
             tasks.Where(task => task.IsFaulted).ToList()
@@ -86,13 +90,10 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
                          Utils.WriteConsoleMessage($"\t\tTask Exception Request Content: {request.Content}");
                      }
                  });
-
             Console.ResetColor();
-
-            return tasks.Where(task => task.IsFaulted).ToList().Count > 0;
         }
 
-        public static bool OutputTaskErrorResults(List<Task> tasks)
+        public static void OutputTaskErrorResults(List<Task> tasks)
         {
             Console.ForegroundColor = ConsoleColor.Red;
 
@@ -109,8 +110,6 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
                  });
 
             Console.ResetColor();
-
-            return tasks.Where(task => task.IsFaulted).ToList().Count > 0;
         }
 
         /// <summary>
@@ -151,6 +150,47 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
         public static void WriteConsoleMessage(string message)
         {
             Console.WriteLine($"{DateTime.Now}: {message}");
+        }
+
+        /// <summary>
+        /// Gets service principal based credentials
+        /// </summary>
+        /// <param name="authEnvironmentVariable">Environment variable that points to the file system secured azure auth settings</param>
+        /// <returns>ServiceClientCredentials</returns>
+        public static async Task<ServiceClientCredentials> GetServicePrincipalCredential(string authEnvironmentVariable)
+        {
+            AzureAuthInfo authSettings = Utils.Deserialize<AzureAuthInfo>(Environment.GetEnvironmentVariable(authEnvironmentVariable));
+
+            var aadSettings = new ActiveDirectoryServiceSettings
+            {
+                AuthenticationEndpoint = new Uri(authSettings.ActiveDirectoryEndpointUrl),
+                TokenAudience = new Uri(authSettings.ManagementEndpointUrl),
+                ValidateAuthority = true
+            };
+
+            return await ApplicationTokenProvider.LoginSilentAsync(
+                authSettings.TenantId,
+                authSettings.ClientId,
+                authSettings.ClientSecret,
+                aadSettings);
+        }
+
+        /// <summary>
+        /// Deserialize json strings
+        /// </summary>
+        /// <typeparam name="T">Type that is used for the deserialization process</typeparam>
+        /// <param name="filePath">Json file path</param>
+        /// <returns>T</returns>
+        public static T Deserialize<T>(string filePath)
+        {
+            var serializer = new JsonSerializer();
+            using (var sr = new StreamReader(filePath))
+            {
+                using (var reader = new JsonTextReader(sr))
+                {
+                    return serializer.Deserialize<T>(reader);
+                }
+            }
         }
     }
 }

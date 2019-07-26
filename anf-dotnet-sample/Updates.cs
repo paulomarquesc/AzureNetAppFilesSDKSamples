@@ -45,7 +45,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 throw;
             }
 
-            int newCapacityPoolSizeTiB = 6;
+            int newCapacityPoolSizeTiB = 10;
             Utils.WriteConsoleMessage($"\tChanging Capacity Pools size from {Utils.GetBytesInTiB(capacityPool.Size)}TiB to {newCapacityPoolSizeTiB}TiB");
 
             // New size in bytes

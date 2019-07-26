@@ -8,10 +8,11 @@ namespace Microsoft.Azure.Management.ANF.Samples
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Common;
+    using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
-    using Microsoft.Azure.Management.ResourceManager.Fluent;
     using Microsoft.Identity.Client;
     using Microsoft.Rest;
+    using Microsoft.Rest.Azure.Authentication;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
 
     class program
@@ -26,8 +27,8 @@ namespace Microsoft.Azure.Management.ANF.Samples
 
             try
             {
-                //RunAsync().GetAwaiter().GetResult();
-                Run();
+                RunAsync().GetAwaiter().GetResult();
+                Utils.WriteConsoleMessage("Sample application successfuly completed execution.");
             }
             catch (Exception ex)
             {
@@ -35,44 +36,40 @@ namespace Microsoft.Azure.Management.ANF.Samples
             }
         }
 
-        static private void Run()
+        static private async Task RunAsync()
         {
             // Getting project configuration
             ProjectConfiguration config = GetConfiguration("appsettings.json");
 
-            // Authenticating using service principals
-            var credentials = SdkContext.AzureCredentialsFactory
-                .FromFile(Environment.GetEnvironmentVariable("AZURE_AUTH_LOCATION"));
+            // Authenticating using service principal, refer to README.md file for requirement details
+            var credentials = await Utils.GetServicePrincipalCredential("AZURE_AUTH_LOCATION");
 
-            // Authenticating using Device Login flow - uncomment following 4 lines for this type of authentication and
-            // comment the lines related to service principal authentication
-            // Console.ForegroundColor = ConsoleColor.Yellow;
-            // AuthenticationResult authenticationResult = await AuthenticateAsync(config.PublicClientApplicationOptions);
-            // TokenCredentials credentials = new TokenCredentials(authenticationResult.AccessToken);
-            // Console.ResetColor();
+            //// Authenticating using Device Login flow - uncomment following 4 lines for this type of authentication and
+            //// comment the lines related to service principal authentication
+            //Console.ForegroundColor = ConsoleColor.Yellow;
+            //AuthenticationResult authenticationResult = await AuthenticateAsync(config.PublicClientApplicationOptions);
+            //TokenCredentials credentials = new TokenCredentials(authenticationResult.AccessToken);
+            //Console.ResetColor();
 
             // Instantiating a new ANF management client
             Utils.WriteConsoleMessage("Instantiating a new Azure NetApp Files management client...");
-
             AzureNetAppFilesManagementClient anfClient = new AzureNetAppFilesManagementClient(credentials) { SubscriptionId = config.SubscriptionId };
             Utils.WriteConsoleMessage($"\tApi Version: {anfClient.ApiVersion}");
 
             // Creating ANF resources (Account, Pool, Volumes)
-            Creation.RunCreationSampleAsync(config, anfClient).GetAwaiter().GetResult();
+            await Creation.RunCreationSampleAsync(config, anfClient);
 
             // Performing updates on Capacity Pools and Volumes
-            Updates.RunUpdateOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
+            await Updates.RunUpdateOperationsSampleAsync(config, anfClient);
 
             // Creating and restoring snapshots
-            Snapshots.RunSnapshotOperationsSampleAsync(config, anfClient).GetAwaiter().GetResult();
+            await Snapshots.RunSnapshotOperationsSampleAsync(config, anfClient);
 
-            // WARNING: destructive operations
+            // WARNING: destructive operations at this point, you can uncomment these lines to clean up all resources created in this example.
             // Deletion operations (snapshots, volumes, capacity pools and accounts)
-
-            Utils.WriteConsoleMessage($"Waiting for 5 minutes to let the snapshot used to create a new volume to complete the split operation therefore not being locked...");
-            System.Threading.Thread.Sleep(TimeSpan.FromMinutes(5));
-
-            Cleanup.RunCleanupTasksSampleAsync(config, anfClient).GetAwaiter().GetResult();
+            Utils.WriteConsoleMessage($"Waiting for 1 minute to let the snapshot used to create a new volume to complete the split operation therefore not being locked...");
+            System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1));
+            await Cleanup.RunCleanupTasksSampleAsync(config, anfClient);
         }
     }
 }

@@ -4,8 +4,10 @@ Repository that includes Azure NetApp File's SDK .NET code usage sample.
 # Prerequisites
 
 1. Azure Subscription
-2. Subscription needs to be whitelisted during the gated GA period for Azure NetApp Files. For more information please refer to [this](https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-register#waitlist) document.
-2. For this sample console app work we need to authenticate and in this sample application we are providing two ways, one that uses service principals (default) or using device flow authentication.
+1. Subscription needs to be whitelisted during the gated GA period for Azure NetApp Files. For more information, please refer to [this](https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-register#waitlist) document.
+1. Resource Group created
+1. Virtual Network with a delegated subnet to Microsoft.Netapp/volumes resource. For more information, please refer to [Guidelines for Azure NetApp Files network planning](https://docs.microsoft.com/en-us/azure/azure-netapp-files/azure-netapp-files-network-topologies)
+1. For this sample console app work we need to authenticate and in this sample application we are providing two ways, one that uses service principals (default) or using device flow authentication.
     1. For Service Principal based authentication
         1. Make sure you're logged on at the subscription where you want to be associated with the service principal by default:
             ```bash

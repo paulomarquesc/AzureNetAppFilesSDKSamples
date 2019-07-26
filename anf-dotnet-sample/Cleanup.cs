@@ -15,23 +15,21 @@ namespace Microsoft.Azure.Management.ANF.Samples
     using Microsoft.Azure.Management.NetApp.Models;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Sdk.CommonSdk;
-    using System.Collections;
+    using Microsoft.Azure.Management.ANF.Samples.Common.Sdk;
 
     public static class Cleanup
     {
         /// <summary>
-        /// Executes basic CRUD operations using Azure NetApp files SDK
+        /// Removes all resources created
         /// </summary>
         /// <returns></returns>
         public static async Task RunCleanupTasksSampleAsync(ProjectConfiguration config, AzureNetAppFilesManagementClient anfClient)
         {
-
             //
             // Cleaning up snapshots
             //
-
             Utils.WriteConsoleMessage("Cleaning up snapshots...");
-            List<Task> snapshotTasks = new List<Task>();
+            List<Task> snapshotCleanupTasks = new List<Task>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
             {
                 if (anfAcct.CapacityPools != null)
@@ -42,48 +40,67 @@ namespace Microsoft.Azure.Management.ANF.Samples
                         {
                             foreach (ModelVolume volume in pool.Volumes)
                             {
-                                IEnumerable<Snapshot> anfSnapshotList = null;
-
-                                try
-                                {
-                                    anfSnapshotList = await anfClient.Snapshots.ListAsync(
-                                       config.ResourceGroup,
-                                       anfAcct.Name,
-                                       pool.Name,
-                                       volume.Name);
-                                }
-                                catch (Exception ex)
-                                {
-                                    if (ex.HResult == -2146233088)
-                                    {
-                                        Utils.WriteConsoleMessage($"No snapshots related to volume {volume.Name} found.");
-                                    }
-                                    else
-                                    {
-                                        Utils.WriteErrorMessage($"An error ocurred trying to list snapshots for volume {pool.Name}");
-                                        throw;
-                                    }
-                                }
+                                IEnumerable<Snapshot> anfSnapshotList = await CommonSdk.ListResourceAsync<Snapshot>(anfClient, config.ResourceGroup, anfAcct.Name, pool.Name, volume.Name);
 
                                 if (anfSnapshotList != null && anfSnapshotList.Count() > 0)
                                 {
-                                    // Snapshot Name property returns a relative path up to the name and to use this property
-                                    // by the DeleteAsync parameter, the argument needs to be sanitized and just the 
-                                    // actual name needs to be used.
+                                    // Snapshot Name property (and other ANF's related nested resources) returns a relative path up to the name 
+                                    // and to use this property with DeleteAsync for example, the argument needs to be sanitized and just the
+                                    // actual name needs to be used. 
                                     // Snapshot Name poperty example: "pmarques-anf01/pool01/pmarques-anf01-pool01-vol01/test-a"
-                                    // "test-a" is the actual name that needs to be used instead. Below you will see a sample function that parses the name from 
-                                    // the snapshot resource id
-
-                                    snapshotTasks = anfSnapshotList.Select(
+                                    // "test-a" is the actual name that needs to be used instead. Below you will see a sample function that 
+                                    // parses the name from snapshot resource id
+                                    snapshotCleanupTasks.AddRange(anfSnapshotList.ToList().Select(
                                         async snapshot =>
                                         {
                                             await anfClient.Snapshots.DeleteAsync(config.ResourceGroup, anfAcct.Name, pool.Name, volume.Name, ResourceUriUtils.GetAnfSnapshot(snapshot.Id));
-                                            Utils.WriteConsoleMessage($"\tDeleted snapshot {snapshot.Id}");
-                                        }).ToList();
+                                            Utils.WriteConsoleMessage($"\tDeleted snapshot: {snapshot.Id}");
+                                        }).ToList());
                                 }
-                                else
+                            }
+                        }
+                    }
+                }
+            }
+
+            try
+            {
+                await Task.WhenAll(snapshotCleanupTasks);
+            }
+            catch
+            {
+                OutputTaskErrorResults(snapshotCleanupTasks);
+                throw;
+            }
+
+            //
+            // Cleaning up all volumes
+            //
+            // Note: Volume deletion operations at the RP level are executed serially
+            Utils.WriteConsoleMessage("Cleaning up Volumes...");
+            foreach (ModelNetAppAccount anfAcct in config.Accounts)
+            {
+                if (anfAcct.CapacityPools != null)
+                {
+                    foreach (ModelCapacityPool pool in anfAcct.CapacityPools)
+                    {
+                        if (pool.Volumes != null)
+                        {
+                            IEnumerable<Volume> anfVolumeList = await CommonSdk.ListResourceAsync<Volume>(anfClient, config.ResourceGroup, anfAcct.Name, pool.Name);
+                            if (anfVolumeList != null && anfVolumeList.Count() > 0)
+                            {
+                                foreach (Volume volume in anfVolumeList)
                                 {
-                                    Utils.WriteConsoleMessage($"No snapshots related to volume {volume.Name} found.");
+                                    try
+                                    {
+                                        await anfClient.Volumes.DeleteAsync(config.ResourceGroup, anfAcct.Name, pool.Name, ResourceUriUtils.GetAnfVolume(volume.Id));
+                                        Utils.WriteConsoleMessage($"\tDeleted volume: {volume.Id}");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Utils.WriteErrorMessage($"An error ocurred while deleting volume {volume.Id}.\nError message: {ex.Message}");
+                                        throw;
+                                    }
                                 }
                             }
                         }
@@ -95,29 +112,66 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 }
             }
 
-            try
-            {
-                await Task.WhenAll(snapshotTasks);
-            }
-            catch
-            {
-                if (OutputTaskErrorResults(snapshotTasks)) throw;
-            }
-
-
-            //
-            // Cleaning up volumes
-            //
-
             //
             // Cleaning up capacity pools
             //
+            Utils.WriteConsoleMessage("Cleaning up capacity pools...");
+            List<Task> poolCleanupTasks = new List<Task>();
+            foreach (ModelNetAppAccount anfAcct in config.Accounts)
+            {
+                if (anfAcct.CapacityPools != null)
+                {
+                    poolCleanupTasks.AddRange(anfAcct.CapacityPools.Select(
+                        async pool =>
+                        {
+                            CapacityPool anfPool = await GetResourceAsync<CapacityPool>(anfClient, config.ResourceGroup, anfAcct.Name, pool.Name);
+                            if (anfPool != null)
+                            {
+                                await anfClient.Pools.DeleteAsync(config.ResourceGroup, anfAcct.Name, ResourceUriUtils.GetAnfCapacityPool(anfPool.Id));
+                                Utils.WriteConsoleMessage($"\tDeleted volume: {anfPool.Id}");
+                            }
+                        }).ToList());
+                }
+            }
+
+            try
+            {
+                await Task.WhenAll(poolCleanupTasks);
+            }
+            catch
+            {
+                OutputTaskErrorResults(poolCleanupTasks);
+                throw;
+            }
 
             //
             // Cleaning up accounts
             //
+            Utils.WriteConsoleMessage("Cleaning up accounts...");
+            List<Task> accountCleanupTasks = new List<Task>();
+            if (config.Accounts != null)
+            {
+                accountCleanupTasks.AddRange(config.Accounts.Select(
+                    async account =>
+                    {
+                        NetAppAccount anfAccount = await GetResourceAsync<NetAppAccount>(anfClient, config.ResourceGroup, account.Name);
+                        if (anfAccount != null)
+                        {
+                            await anfClient.Accounts.DeleteAsync(config.ResourceGroup, anfAccount.Name);
+                            Utils.WriteConsoleMessage($"\tDeleted account: {anfAccount.Id}");
+                        }
+                    }).ToList());
+            }
 
-
+            try
+            {
+                await Task.WhenAll(accountCleanupTasks);
+            }
+            catch
+            {
+                OutputTaskErrorResults(accountCleanupTasks);
+                throw;
+            }
 
         }
     }

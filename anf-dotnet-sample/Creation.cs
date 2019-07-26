@@ -15,7 +15,9 @@ namespace Microsoft.Azure.Management.ANF.Samples
     using Microsoft.Azure.Management.NetApp.Models;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Sdk.CommonSdk;
-    
+    using System.Collections;
+    using System.Runtime.CompilerServices;
+
     public static class Creation
     {
         /// <summary>
@@ -27,7 +29,6 @@ namespace Microsoft.Azure.Management.ANF.Samples
             //
             // Creating ANF Accounts
             //
-
             Utils.WriteConsoleMessage("Creating Azure NetApp Files accounts ...");
             if (config.Accounts.Count == 0)
             {
@@ -36,8 +37,8 @@ namespace Microsoft.Azure.Management.ANF.Samples
             }
             else
             {
-                var accountTasks = config.Accounts.Select(
-                   async anfAcct => await CreateOrRetrieveAccountAsync(config, anfClient, anfAcct)).ToList();
+                List<Task<NetAppAccount>> accountTasks = config.Accounts.Select(
+                    async anfAcct => await CreateOrRetrieveAccountAsync(config, anfClient, anfAcct)).ToList();
 
                 try
                 {
@@ -45,23 +46,22 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 }
                 catch
                 {
-                    if (OutputTaskErrorResults<NetAppAccount>(accountTasks)) throw;
+                    OutputTaskErrorResults<NetAppAccount>(accountTasks);
+                    throw;
                 }
-                accountTasks = null;
             }
 
             //
             // Creating Capacity Pools
             //
-
             Utils.WriteConsoleMessage("Creating Capacity Pools...");
             List<Task<CapacityPool>> poolTasks = new List<Task<CapacityPool>>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
             {
                 if (anfAcct.CapacityPools != null)
                 {
-                    poolTasks = anfAcct.CapacityPools.Select(
-                        async pool => await CreateOrRetrieveCapacityPoolAsync(anfClient, config.ResourceGroup, anfAcct, pool)).ToList();
+                    poolTasks.AddRange(anfAcct.CapacityPools.Select(
+                        async pool => await CreateOrRetrieveCapacityPoolAsync(anfClient, config.ResourceGroup, anfAcct, pool)).ToList());
                 }
                 else
                 {
@@ -75,16 +75,15 @@ namespace Microsoft.Azure.Management.ANF.Samples
             }
             catch
             {
-                if (OutputTaskErrorResults<CapacityPool>(poolTasks)) throw;
+                OutputTaskErrorResults<CapacityPool>(poolTasks);
+                throw;
             }
-            poolTasks = null;
 
             //
             // Creating Volumes
             //
-
+            // Note: Volume creation operations at the RP level are executed serially
             Utils.WriteConsoleMessage("Creating Volumes...");
-            List<Task<Volume>> volumeTasks = new List<Task<Volume>>();
             foreach (ModelNetAppAccount anfAcct in config.Accounts)
             {
                 if (anfAcct.CapacityPools != null)
@@ -93,8 +92,18 @@ namespace Microsoft.Azure.Management.ANF.Samples
                     {
                         if (pool.Volumes != null)
                         {
-                            volumeTasks = pool.Volumes.Select(
-                                async volume => await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume)).ToList();
+                            foreach (ModelVolume volume in pool.Volumes)
+                            {
+                                try
+                                {
+                                    Volume volumeResource = await CreateOrRetrieveVolumeAsync(anfClient, config.ResourceGroup, anfAcct, pool, volume);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Utils.WriteErrorMessage($"An error ocurred while creating volume {anfAcct.Name}{pool.Name}{volume.Name}.\nError message: {ex.Message}");
+                                    throw;
+                                }
+                            }
                         }
                         else
                         {
@@ -103,16 +112,6 @@ namespace Microsoft.Azure.Management.ANF.Samples
                     }
                 }
             }
-
-            try
-            {
-                await Task.WhenAll(volumeTasks);
-            }
-            catch
-            {
-                if (OutputTaskErrorResults<Volume>(volumeTasks)) throw;
-            }
-            volumeTasks = null;
         }
 
         /// <summary>
@@ -124,26 +123,16 @@ namespace Microsoft.Azure.Management.ANF.Samples
         /// <returns>NetAppCount object</returns>
         private static async Task<NetAppAccount> CreateOrRetrieveAccountAsync(ProjectConfiguration config, AzureNetAppFilesManagementClient client, ModelNetAppAccount account)
         {
-            // Creating the ANF Account
-            NetAppAccount anfAccount;
-            try
+            // Creating ANF Account
+            NetAppAccount anfAccount = await GetResourceAsync<NetAppAccount>(client, config.ResourceGroup, account.Name);
+            if (anfAccount == null)
             {
-                // Checking if resource already exists
-                anfAccount = await client.Accounts.GetAsync(config.ResourceGroup, account.Name);
-                Utils.WriteConsoleMessage($"\tAccount already exists, resource id: {anfAccount.Id}");
+                anfAccount = await CreateOrUpdateAnfAccountAsync(config, client, account);
+                Utils.WriteConsoleMessage($"\tAccount successfully created, resource id: {anfAccount.Id}");
             }
-            catch (Exception ex)
+            else
             {
-                // If account does not exist, create one
-                if (ex.HResult == -2146233088)
-                {
-                    anfAccount = await CreateOrUpdateAnfAccountAsync(config, client, account);
-                    Utils.WriteConsoleMessage($"\tAccount successfully created, resource id: {anfAccount.Id}");
-                }
-                else
-                {
-                    throw;
-                }
+                Utils.WriteConsoleMessage($"\tAccount already exists, resource id: {anfAccount.Id}");
             }
 
             return anfAccount;
@@ -159,28 +148,15 @@ namespace Microsoft.Azure.Management.ANF.Samples
         /// <returns>CapacityPool object</returns>
         private static async Task<CapacityPool> CreateOrRetrieveCapacityPoolAsync(AzureNetAppFilesManagementClient client, string resourceGroup, ModelNetAppAccount account, ModelCapacityPool pool)
         {
-            // Creating the ANF Account
-            CapacityPool anfCapacityPool;
-
-            try
+            CapacityPool anfCapacityPool = await GetResourceAsync<CapacityPool>(client, resourceGroup, account.Name, pool.Name);
+            if (anfCapacityPool == null)
             {
-                // Checking if resource already exists
-                anfCapacityPool = await client.Pools.GetAsync(resourceGroup, account.Name, pool.Name);
-
-                Utils.WriteConsoleMessage($"\tCapacity Pool already exists, resource id: {anfCapacityPool.Id}");
+                anfCapacityPool = await CreateOrUpdateCapacityPoolAsync(client, resourceGroup, account, pool);
+                Utils.WriteConsoleMessage($"\tCapacity Pool successfully created, resource id: {anfCapacityPool.Id}");
             }
-            catch (Exception ex)
+            else
             {
-                // If account does not exist, create one
-                if (ex.HResult == -2146233088)
-                {
-                    anfCapacityPool = await CreateOrUpdateCapacityPoolAsync(client, resourceGroup, account, pool);
-                    Utils.WriteConsoleMessage($"\tCapacity Pool successfully created, resource id: {anfCapacityPool.Id}");
-                }
-                else
-                {
-                    throw;
-                }
+                Utils.WriteConsoleMessage($"\tCapacity already exists, resource id: {anfCapacityPool.Id}");
             }
 
             return anfCapacityPool;
@@ -195,26 +171,15 @@ namespace Microsoft.Azure.Management.ANF.Samples
         /// <returns>NetAppCount object</returns>
         private static async Task<Volume> CreateOrRetrieveVolumeAsync(AzureNetAppFilesManagementClient client, string resourceGroup, ModelNetAppAccount account, ModelCapacityPool pool, ModelVolume volume)
         {
-            // Creating or retrieving a volume
-            Volume anfVolume;
-            try
+            Volume anfVolume = await GetResourceAsync<Volume>(client, resourceGroup, account.Name, pool.Name, volume.Name);
+            if (anfVolume == null)
             {
-                // Checking if resource already exists
-                anfVolume = await client.Volumes.GetAsync(resourceGroup, account.Name, pool.Name, volume.Name);
-                Utils.WriteConsoleMessage($"\tVolume already exists, resource id: {anfVolume.Id}");
+                anfVolume = await CreateOrUpdateVolumeAsync(client, resourceGroup, account, pool, volume);
+                Utils.WriteConsoleMessage($"\tVolume successfully created, resource id: {anfVolume.Id}");
             }
-            catch (Exception ex)
+            else
             {
-                // If volume does not exist, create one
-                if (ex.HResult == -2146233088)
-                {
-                    anfVolume = await CreateOrUpdateVolumeAsync(client, resourceGroup, account, pool, volume);
-                    Utils.WriteConsoleMessage($"\tVolume successfully created, resource id: {anfVolume.Id}");
-                }
-                else
-                {
-                    throw;
-                }
+                Utils.WriteConsoleMessage($"\tVolume already exists, resource id: {anfVolume.Id}");
             }
 
             return anfVolume;
