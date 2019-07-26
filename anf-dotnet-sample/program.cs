@@ -8,11 +8,8 @@ namespace Microsoft.Azure.Management.ANF.Samples
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Common;
-    using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
     using Microsoft.Identity.Client;
-    using Microsoft.Rest;
-    using Microsoft.Rest.Azure.Authentication;
     using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
 
     class program
@@ -45,7 +42,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             var credentials = await Utils.GetServicePrincipalCredential("AZURE_AUTH_LOCATION");
 
             //// Authenticating using Device Login flow - uncomment following 4 lines for this type of authentication and
-            //// comment the lines related to service principal authentication
+            //// comment the lines related to service principal authentication, refer to README.md file for requirement details
             //Console.ForegroundColor = ConsoleColor.Yellow;
             //AuthenticationResult authenticationResult = await AuthenticateAsync(config.PublicClientApplicationOptions);
             //TokenCredentials credentials = new TokenCredentials(authenticationResult.AccessToken);
@@ -67,9 +64,9 @@ namespace Microsoft.Azure.Management.ANF.Samples
 
             // WARNING: destructive operations at this point, you can uncomment these lines to clean up all resources created in this example.
             // Deletion operations (snapshots, volumes, capacity pools and accounts)
-            Utils.WriteConsoleMessage($"Waiting for 1 minute to let the snapshot used to create a new volume to complete the split operation therefore not being locked...");
-            System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1));
-            await Cleanup.RunCleanupTasksSampleAsync(config, anfClient);
+            //Utils.WriteConsoleMessage($"Waiting for 1 minute to let the snapshot used to create a new volume to complete the split operation therefore not being locked...");
+            //System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1));
+            //await Cleanup.RunCleanupTasksSampleAsync(config, anfClient);
         }
     }
 }

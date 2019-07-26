@@ -6,9 +6,11 @@
 namespace Microsoft.Azure.Management.ANF.Samples.Common
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Net;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Identity.Client;
@@ -190,6 +192,43 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common
                 {
                     return serializer.Deserialize<T>(reader);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Waits for a list of tasks to complete and output and throw errors if they occur
+        /// </summary>
+        /// <typeparam name="T">Valid types: NetAppAccount, CapacityPool, Volume, Snapshot</typeparam>
+        /// <param name="taskList">List of tasks to wait for completion</param>
+        /// <returns></returns>
+        public static async Task WaitForTasksCompletion<T>(List<Task<T>> taskList)
+        {
+            try
+            {
+                await Task.WhenAll(taskList);
+            }
+            catch
+            {
+                OutputTaskErrorResults<T>(taskList);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Waits for a list of tasks to complete and output and throw errors if they occur, this is used when the waited tasks do not return values
+        /// </summary>
+        /// <param name="taskList">List of tasks to wait for completion</param>
+        /// <returns></returns>
+        public static async Task WaitForTasksCompletion(List<Task> taskList)
+        {
+            try
+            {
+                await Task.WhenAll(taskList);
+            }
+            catch
+            {
+                OutputTaskErrorResults(taskList);
+                throw;
             }
         }
     }

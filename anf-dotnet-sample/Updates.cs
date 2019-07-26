@@ -10,11 +10,8 @@ namespace Microsoft.Azure.Management.ANF.Samples
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Common;
-    using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
     using Microsoft.Azure.Management.NetApp.Models;
-    using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
-    using static Microsoft.Azure.Management.ANF.Samples.Common.Sdk.CommonSdk;
     
     public static class Updates
     {
@@ -27,7 +24,6 @@ namespace Microsoft.Azure.Management.ANF.Samples
             //
             // Capacity Pool Updates
             //
-
             Utils.WriteConsoleMessage("Performing size update on a Capacity Pool");
 
             // Get current Capacity Pool information
@@ -78,7 +74,6 @@ namespace Microsoft.Azure.Management.ANF.Samples
             //
             // Volume Updates
             //
-
             Utils.WriteConsoleMessage("Performing size and export policy update on a volume");
 
             // Get current Volume information

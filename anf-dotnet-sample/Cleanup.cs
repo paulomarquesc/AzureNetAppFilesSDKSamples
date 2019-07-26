@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
     public static class Cleanup
     {
         /// <summary>
-        /// Removes all resources created
+        /// Removes all created resources
         /// </summary>
         /// <returns></returns>
         public static async Task RunCleanupTasksSampleAsync(ProjectConfiguration config, AzureNetAppFilesManagementClient anfClient)
@@ -63,15 +63,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 }
             }
 
-            try
-            {
-                await Task.WhenAll(snapshotCleanupTasks);
-            }
-            catch
-            {
-                OutputTaskErrorResults(snapshotCleanupTasks);
-                throw;
-            }
+            await WaitForTasksCompletion(snapshotCleanupTasks).ConfigureAwait(false);
 
             //
             // Cleaning up all volumes
@@ -134,15 +126,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 }
             }
 
-            try
-            {
-                await Task.WhenAll(poolCleanupTasks);
-            }
-            catch
-            {
-                OutputTaskErrorResults(poolCleanupTasks);
-                throw;
-            }
+            await WaitForTasksCompletion(poolCleanupTasks).ConfigureAwait(false);
 
             //
             // Cleaning up accounts
@@ -163,16 +147,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                     }).ToList());
             }
 
-            try
-            {
-                await Task.WhenAll(accountCleanupTasks);
-            }
-            catch
-            {
-                OutputTaskErrorResults(accountCleanupTasks);
-                throw;
-            }
-
+            await WaitForTasksCompletion(accountCleanupTasks).ConfigureAwait(false);
         }
     }
 }

@@ -40,15 +40,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 List<Task<NetAppAccount>> accountTasks = config.Accounts.Select(
                     async anfAcct => await CreateOrRetrieveAccountAsync(config, anfClient, anfAcct)).ToList();
 
-                try
-                {
-                    await Task.WhenAll(accountTasks);
-                }
-                catch
-                {
-                    OutputTaskErrorResults<NetAppAccount>(accountTasks);
-                    throw;
-                }
+                await WaitForTasksCompletion<NetAppAccount>(accountTasks).ConfigureAwait(false);
             }
 
             //
@@ -69,15 +61,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
                 }
             }
 
-            try
-            {
-                await Task.WhenAll(poolTasks);
-            }
-            catch
-            {
-                OutputTaskErrorResults<CapacityPool>(poolTasks);
-                throw;
-            }
+            await WaitForTasksCompletion<CapacityPool>(poolTasks).ConfigureAwait(false);
 
             //
             // Creating Volumes

@@ -6,11 +6,7 @@
 namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Net;
-    using System.Reflection.Metadata;
-    using System.Runtime.InteropServices.ComTypes;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
@@ -115,6 +111,17 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
             return await client.Volumes.CreateOrUpdateAsync(volumeBody, resourceGroup, account.Name, pool.Name, volume.Name);
         }
 
+        /// <summary>
+        /// Returns an ANF resource or null if it does not exist
+        /// </summary>
+        /// <typeparam name="T">Valid types: NetAppAccount, CapacityPool, Volume, Snapshot</typeparam>
+        /// <param name="client">ANF Client object</param>
+        /// <param name="parameterList">List of parameters required depending on the resource type:
+        ///     Snapshot     -> ResourceGroupName, AccountName, PoolName, VolumeName, SnapshotName
+        ///     Volume       -> ResourceGroupName, AccountName, PoolName, VolumeName
+        ///     CapacityPool -> ResourceGroupName, AccountName, PoolName
+        ///     Account      -> ResourceGroupName, AccountName</param>
+        /// <returns></returns>
         public static async Task<T> GetResourceAsync<T>(AzureNetAppFilesManagementClient client, params string[] parameterList )
         {
             try
@@ -149,24 +156,31 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
                         resourceGroupName: parameterList[0],
                         accountName: parameterList[1]);
                 }
-
-                // If object is not supported by this method, return null
-                return default(T);
             }
             catch (Exception ex)
             {
-                // If resource does not exist return null
-                if (ex.HResult == -2146233088)
-                {
-                    return default(T);
-                }
-                else
+                // The following HResult is thrown if no resource is found
+                if (ex.HResult != -2146233088)
                 {
                     throw;
                 }
             }
+
+            // If object is not supported by this method or nothing returned from GetAsync, return null
+            return default(T);
         }
 
+        /// <summary>
+        /// Returns a list of ANF resources or null if none returns
+        /// </summary>
+        /// <typeparam name="T">Valid types: NetAppAccount, CapacityPool, Volume, Snapshot</typeparam>
+        /// <param name="client">ANF Client object</param>
+        /// <param name="parameterList">List of parameters required depending on the resource type:
+        ///     Snapshot     -> ResourceGroupName, AccountName, PoolName, VolumeName, SnapshotName
+        ///     Volume       -> ResourceGroupName, AccountName, PoolName, VolumeName
+        ///     CapacityPool -> ResourceGroupName, AccountName, PoolName
+        ///     Account      -> ResourceGroupName, AccountName</param>
+        /// <returns></returns>
         public static async Task<IEnumerable<T>> ListResourceAsync<T>(AzureNetAppFilesManagementClient client, params string[] parameterList)
         {
             try
@@ -200,7 +214,7 @@ namespace Microsoft.Azure.Management.ANF.Samples.Common.Sdk
             }
             catch (Exception ex)
             {
-                // If resource does not exist return null
+                // The following HResult is thrown if no resource is found
                 if (ex.HResult != -2146233088)
                 {
                     throw;

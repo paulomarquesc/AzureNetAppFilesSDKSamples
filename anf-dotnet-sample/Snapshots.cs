@@ -6,15 +6,10 @@
 namespace Microsoft.Azure.Management.ANF.Samples
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.ANF.Samples.Common;
-    using Microsoft.Azure.Management.ANF.Samples.Model;
     using Microsoft.Azure.Management.NetApp;
     using Microsoft.Azure.Management.NetApp.Models;
-    using static Microsoft.Azure.Management.ANF.Samples.Common.Utils;
-    using static Microsoft.Azure.Management.ANF.Samples.Common.Sdk.CommonSdk;
     
     public static class Snapshots
     {
@@ -27,7 +22,6 @@ namespace Microsoft.Azure.Management.ANF.Samples
             //
             // Creating snapshot from first volume of the first capacity pool
             //
-
             Utils.WriteConsoleMessage("Performing snapshot operations");
 
             Utils.WriteConsoleMessage("\tCreating snapshot...");
@@ -61,7 +55,6 @@ namespace Microsoft.Azure.Management.ANF.Samples
             //
             // Creating a volume from snapshot
             //
-
             Utils.WriteConsoleMessage("\tCreating new volume from snapshot...");
 
             string newVolumeName = $"Vol-{ResourceUriUtils.GetAnfSnapshot(snapshot.Id)}";
@@ -84,7 +77,7 @@ namespace Microsoft.Azure.Management.ANF.Samples
             Volume newVolumeFromSnapshot = null;
             try
             {
-                // Notice that Snapshot it is not the resource Id of the snapshot, this value is the unique identifier (guid) of 
+                // Notice that SnapshotId is not the actual resource Id of the snapshot, this value is the unique identifier (guid) of 
                 // the snapshot, represented by the SnapshotId instead.
                 Volume volumeFromSnapshotBody = new Volume()
                 {
